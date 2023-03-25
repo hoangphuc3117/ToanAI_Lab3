@@ -160,3 +160,87 @@ class BFSGraph(Graph):
         result = "->".join(str(v.getId()) for v in trace)
         print(result)
 
+class Tarjan1():
+    """ 
+        Class TarjanGraph
+        Apply Tarjan algorithm to 
+    """
+    def __init__(self, graph):
+        super().__init__()
+        self.graph = graph
+        self.index = 0
+        self.stack = []
+        self.indexes = {}
+        self.lowlinks = {}
+        self.answer = []
+
+    def setup(self):
+        for v in self.graph:
+            if v != None:
+                self.indexes[v.id] = None
+                self.lowlinks[v.id] = None
+
+    def run(self):
+        for v in self.graph.getVertices():
+            vertex = self.graph.getVertex(v)
+            if vertex != None:
+                if self.indexes[vertex.id] == None:
+                    self.SCC(vertex)
+
+    def FindInSCC(self, element):
+        for scc in self.answer:
+            if element in scc:
+                return scc[0]
+    
+    def SCC(self, v):
+        self.indexes[v.id] = self.index
+        self.lowlinks[v.id] = self.index
+        self.index += 1
+        self.stack.append(v)
+        SCComp = []
+
+        for w in v.getConnections():
+            if self.indexes[w.id] == None:
+                self.SCC(w)
+                self.lowlinks[v.id] = min(self.lowlinks[v.id], self.lowlinks[w.id])
+            elif w in self.stack:
+                self.lowlinks[v.id] = min(self.lowlinks[v.id], self.indexes[w.id])
+        
+        if self.lowlinks[v.id] == self.indexes[v.id]:
+            w = None
+            while w == None or w.id != v.id:
+                w = self.stack.pop()
+                SCComp.append(w)
+        if SCComp != [] and SCComp not in self.answer:
+            # SCComp.sort()
+            self.answer.append(SCComp)
+
+    def GetFinalAnswer(self):
+        FinalAnswer = {}
+        for answer in self.answer:
+            for element in answer:
+                destinations = element.getConnections()
+                for destination in destinations:
+                    findElement = self.FindInSCC(element)
+                    if findElement not in FinalAnswer:
+                        FinalAnswer[findElement.id] = []
+
+                    findDestination = self.FindInSCC(destination)
+                    if findDestination != [] and findDestination != findElement:
+                        if findDestination not in FinalAnswer[findElement.id]:
+                            FinalAnswer[findElement.id].append(findDestination)
+
+        #R
+        print(len(self.answer))
+        print(self.answer)
+        
+        #L
+        connections = 0
+        for element in FinalAnswer:
+            connections += len(FinalAnswer[element])
+        print(connections)
+
+        for key in sorted (FinalAnswer.keys()):
+            FinalAnswer[key].sort()
+            for element in FinalAnswer[key]:
+                print(f'{key} {element}')  
