@@ -160,10 +160,10 @@ class BFSGraph(Graph):
         result = "->".join(str(v.getId()) for v in trace)
         print(result)
 
-class Tarjan1():
+class Tarjan():
     """ 
         Class TarjanGraph
-        Apply Tarjan algorithm to 
+        Apply Tarjan algorithm to find strong components connected
     """
     def __init__(self, graph):
         super().__init__()
@@ -172,7 +172,7 @@ class Tarjan1():
         self.stack = []
         self.indexes = {}
         self.lowlinks = {}
-        self.answer = []
+        self.subGraphs = []
 
     def setup(self):
         for v in self.graph:
@@ -185,14 +185,15 @@ class Tarjan1():
             vertex = self.graph.getVertex(v)
             if vertex != None:
                 if self.indexes[vertex.id] == None:
-                    self.SCC(vertex)
+                    self.scc(vertex)
 
-    def FindInSCC(self, element):
-        for scc in self.answer:
+    def find_in_scc(self, element):
+        for scc in self.subGraphs:
             if element in scc:
                 return scc[0]
     
-    def SCC(self, v):
+    # Strong components connected
+    def scc(self, v):
         self.indexes[v.id] = self.index
         self.lowlinks[v.id] = self.index
         self.index += 1
@@ -201,7 +202,7 @@ class Tarjan1():
 
         for w in v.getConnections():
             if self.indexes[w.id] == None:
-                self.SCC(w)
+                self.scc(w)
                 self.lowlinks[v.id] = min(self.lowlinks[v.id], self.lowlinks[w.id])
             elif w in self.stack:
                 self.lowlinks[v.id] = min(self.lowlinks[v.id], self.indexes[w.id])
@@ -210,37 +211,26 @@ class Tarjan1():
             w = None
             while w == None or w.id != v.id:
                 w = self.stack.pop()
-                SCComp.append(w)
-        if SCComp != [] and SCComp not in self.answer:
-            # SCComp.sort()
-            self.answer.append(SCComp)
+                if w.id != 0 and w != None:
+                    SCComp.append(w)
+        if SCComp != [] and SCComp not in self.subGraphs:
+            self.subGraphs.append(SCComp)
 
-    def GetFinalAnswer(self):
-        FinalAnswer = {}
-        for answer in self.answer:
-            for element in answer:
-                destinations = element.getConnections()
-                for destination in destinations:
-                    findElement = self.FindInSCC(element)
-                    if findElement not in FinalAnswer:
-                        FinalAnswer[findElement.id] = []
+    def get_final_sub_graphs(self):
+        FinalSubGraphs = []
+        for subGraph in self.subGraphs:
+            graph = Graph()
+            if len(subGraph) == 1:
+                 graph.addVertex(subGraph[0])     
+            else:
+                for element in subGraph:
+                    findElement = self.find_in_scc(element = element)
+                    destinations = element.getConnections()
+                    if len(destinations) != 0:
+                        for destination in destinations:
+                            findDestination = self.find_in_scc(element = destination)
+                            if findElement != None and findDestination != None and findElement.id == findDestination.id:
+                                graph.addEdge(element, destination, 0)
+            FinalSubGraphs.append(graph)        
 
-                    findDestination = self.FindInSCC(destination)
-                    if findDestination != [] and findDestination != findElement:
-                        if findDestination not in FinalAnswer[findElement.id]:
-                            FinalAnswer[findElement.id].append(findDestination)
-
-        #R
-        print(len(self.answer))
-        print(self.answer)
-        
-        #L
-        connections = 0
-        for element in FinalAnswer:
-            connections += len(FinalAnswer[element])
-        print(connections)
-
-        for key in sorted (FinalAnswer.keys()):
-            FinalAnswer[key].sort()
-            for element in FinalAnswer[key]:
-                print(f'{key} {element}')  
+        return FinalSubGraphs  
